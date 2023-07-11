@@ -6,8 +6,18 @@ export enum HttpMethod {
 export enum HttpStatus {
   OK = 200,
   BadRequest = 400,
+  Unauthorized = 401,
   MethodNotAllowed = 405,
 }
+
+export const HttpHeaderJson = {
+  'Content-Type': 'application/json',
+};
+
+/**
+ * 全角空格，用于 html 中的占位符
+ */
+export const FULL_SPACE = '　';
 
 /**
  * 角色
@@ -24,12 +34,58 @@ export enum Role {
  */
 export enum Model {
   'gpt-3.5-turbo' = 'gpt-3.5-turbo',
-  'gpt-3.5-turbo-0301' = 'gpt-3.5-turbo-0301',
+  'gpt-3.5-turbo-0613' = 'gpt-3.5-turbo-0613',
+  'gpt-3.5-turbo-16k' = 'gpt-3.5-turbo-16k',
+  'gpt-3.5-turbo-16k-0613' = 'gpt-3.5-turbo-16k-0613',
   'gpt-4' = 'gpt-4',
-  'gpt-4-0314' = 'gpt-4-0314',
+  'gpt-4-0613' = 'gpt-4-0613',
   'gpt-4-32k' = 'gpt-4-32k',
-  'gpt-4-32k-0314' = 'gpt-4-32k-0314',
+  'gpt-4-32k-0613' = 'gpt-4-32k-0613',
 }
+
+export const AllModels = [
+  Model['gpt-3.5-turbo'],
+  Model['gpt-3.5-turbo-0613'],
+  Model['gpt-3.5-turbo-16k'],
+  Model['gpt-3.5-turbo-16k-0613'],
+  Model['gpt-4'],
+  Model['gpt-4-0613'],
+  Model['gpt-4-32k'],
+  Model['gpt-4-32k-0613'],
+];
+
+export const MIN_TOKENS: Record<Model, number> = {
+  [Model['gpt-3.5-turbo']]: 1024,
+  [Model['gpt-3.5-turbo-0613']]: 1024,
+  [Model['gpt-3.5-turbo-16k']]: 1024,
+  [Model['gpt-3.5-turbo-16k-0613']]: 1024,
+  [Model['gpt-4']]: 1024,
+  [Model['gpt-4-0613']]: 1024,
+  [Model['gpt-4-32k']]: 1024,
+  [Model['gpt-4-32k-0613']]: 1024,
+};
+
+export const MAX_TOKENS: Record<Model, number> = {
+  [Model['gpt-3.5-turbo']]: 4096,
+  [Model['gpt-3.5-turbo-0613']]: 4096,
+  [Model['gpt-3.5-turbo-16k']]: 16384,
+  [Model['gpt-3.5-turbo-16k-0613']]: 16384,
+  [Model['gpt-4']]: 8192,
+  [Model['gpt-4-0613']]: 8192,
+  [Model['gpt-4-32k']]: 32768,
+  [Model['gpt-4-32k-0613']]: 32768,
+};
+
+export const TOKENS_STEP: Record<Model, number> = {
+  [Model['gpt-3.5-turbo']]: 512,
+  [Model['gpt-3.5-turbo-0613']]: 512,
+  [Model['gpt-3.5-turbo-16k']]: 1024,
+  [Model['gpt-3.5-turbo-16k-0613']]: 1024,
+  [Model['gpt-4']]: 1024,
+  [Model['gpt-4-0613']]: 1024,
+  [Model['gpt-4-32k']]: 1024,
+  [Model['gpt-4-32k-0613']]: 1024,
+};
 
 /**
  * 单条消息
@@ -104,7 +160,7 @@ export interface ChatRequest {
    */
   stop?: string | string[];
   /**
-   * 最大 token 数量
+   * tokens 限制
    */
   max_tokens?: number;
   /**
@@ -122,6 +178,8 @@ export interface ChatRequest {
    *
    * 用于惩罚模型生成频率较高的 token，从而使得生成的文本更加多样化。
    * 与 presence_penalty 相似，frequency_penalty 越高，模型生成的文本中就越不可能包含频率较高的 token。
+   *
+   * @default 0;
    */
   frequency_penalty?: number;
   /**
@@ -198,3 +256,68 @@ export interface ChatResponseError {
     type: string;
   };
 }
+
+/**
+ * /v1/models 的响应体
+ * https://platform.openai.com/docs/api-reference/models
+ */
+export interface ModelsResponse {
+  data: {
+    created: number;
+    id: Model;
+    object: 'model';
+    owned_by: 'openai';
+    parent: null;
+    permission: {
+      0: {
+        allow_create_engine: boolean;
+        allow_fine_tuning: boolean;
+        allow_logprobs: boolean;
+        allow_sampling: boolean;
+        allow_search_indices: boolean;
+        allow_view: boolean;
+        created: number;
+        group: null;
+        id: string;
+        is_blocking: boolean;
+        object: 'model_permission';
+        organization: '*';
+      };
+    };
+    root: Model;
+  }[];
+  object: 'list';
+}
+
+/**
+ * /v1/models 的响应体示例
+ */
+export const exampleModelsResponse: ModelsResponse = {
+  data: [
+    {
+      created: 1677610602,
+      id: Model['gpt-3.5-turbo'],
+      object: 'model',
+      owned_by: 'openai',
+      parent: null,
+      permission: {
+        0: {
+          allow_create_engine: false,
+          allow_fine_tuning: false,
+          allow_logprobs: true,
+          allow_sampling: true,
+          allow_search_indices: false,
+          allow_view: true,
+          created: 1684434433,
+          group: null,
+          id: 'modelperm-Gsp3SyIu7GamHB3McQv3rMf5',
+          is_blocking: false,
+          object: 'model_permission',
+          organization: '*',
+        },
+      },
+      root: Model['gpt-3.5-turbo'],
+    },
+  ],
+  object: 'list',
+};
